@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동시성 테스트 대시보드</title>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🛒 주문-결제 시스템 동시성 테스트 대시보드</h1>
+        <p class="subtitle">V1 (동시성 이슈 발생) vs V2 (해결 버전)</p>
+    </header>
+
+    <!-- 상태 요약 -->
+    <section class="summary-section">
+        <div class="summary-card">
+            <h3>👥 사용자</h3>
+            <p class="count" th:text="${#lists.size(users)}">0</p>
+        </div>
+        <div class="summary-card">
+            <h3>📦 상품</h3>
+            <p class="count" th:text="${#lists.size(products)}">0</p>
+        </div>
+        <div class="summary-card">
+            <h3>🎫 쿠폰</h3>
+            <p class="count" th:text="${#lists.size(coupons)}">0</p>
+        </div>
+        <div class="summary-card">
+            <h3>📋 주문</h3>
+            <p class="count" th:text="${#lists.size(orders)}">0</p>
+        </div>
+    </section>
+
+    <!-- 주문 생성 테스트 -->
+    <section class="test-section">
+        <h2>📝 주문 생성 테스트</h2>
+
+        <div class="form-group">
+            <label>사용자 선택:</label>
+            <select id="userId" class="form-control">
+                <option th:each="user : ${users}"
+                        th:value="${user.id}"
+                        th:text="${user.username + ' (' + user.grade + ', 포인트: ' + user.pointBalance + ')'}">
+                </option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>상품 선택:</label>
+            <select id="productId" class="form-control">
+                <option th:each="product : ${products}"
+                        th:value="${product.id}"
+                        th:text="${product.name + ' (재고: ' + product.stockQuantity + ', 가격: ' + product.price + '원)'}">
+                </option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>수량:</label>
+            <input type="number" id="quantity" class="form-control" value="1" min="1">
+        </div>
+
+        <div class="form-group">
+            <label>쿠폰 선택 (선택사항):</label>
+            <select id="couponId" class="form-control">
+                <option value="">쿠폰 없음</option>
+                <option th:each="coupon : ${coupons}"
+                        th:value="${coupon.id}"
+                        th:text="${coupon.name + ' (남은 횟수: ' + coupon.remainingCount + ')'}">
+                </option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>사용 포인트:</label>
+            <input type="number" id="pointsToUse" class="form-control" value="0" min="0">
+        </div>
+
+        <div class="form-group">
+            <label>동시 요청 수:</label>
+            <input type="number" id="concurrentRequests" class="form-control" value="5" min="1" max="50">
+            <small>동시성 테스트를 위해 같은 요청을 여러 번 동시에 보냅니다</small>
+        </div>
+
+        <div class="button-group">
+            <button onclick="createOrder('v1')" class="btn btn-danger">
+                🔴 V1로 주문 (동시성 이슈 발생)
+            </button>
+            <button onclick="createOrder('v2')" class="btn btn-success">
+                🟢 V2로 주문 (해결 버전)
+            </button>
+            <button onclick="createOrderConcurrent('v1')" class="btn btn-danger-outline">
+                🔴 V1 동시 요청 테스트
+            </button>
+            <button onclick="createOrderConcurrent('v2')" class="btn btn-success-outline">
+                🟢 V2 동시 요청 테스트
+            </button>
+        </div>
+    </section>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <div class="main-content">
+        <!-- 좌측: 데이터 현황 -->
+        <div class="left-panel">
+            <section class="data-section">
+                <div class="data-column">
+                    <h2>📦 상품 재고</h2>
+                    <button onclick="refreshData()" class="btn btn-small">새로고침</button>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>상품명</th>
+                    <th>재고</th>
+                    <th>가격</th>
+                </tr>
+                </thead>
+                <tbody id="productsTable">
+                <tr th:each="product : ${products}">
+                    <td th:text="${product.id}"></td>
+                    <td th:text="${product.name}"></td>
+                    <td th:text="${product.stockQuantity}" class="stock-count"></td>
+                    <td th:text="${#numbers.formatInteger(product.price, 0, 'COMMA') + '원'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="data-column">
+            <h2>👥 사용자 포인트</h2>
+            <button onclick="refreshData()" class="btn btn-small">새로고침</button>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>이름</th>
+                    <th>등급</th>
+                    <th>포인트</th>
+                </tr>
+                </thead>
+                <tbody id="usersTable">
+                <tr th:each="user : ${users}">
+                    <td th:text="${user.id}"></td>
+                    <td th:text="${user.username}"></td>
+                    <td th:text="${user.grade}"></td>
+                    <td th:text="${#numbers.formatInteger(user.pointBalance, 0, 'COMMA')}" class="point-count"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="data-column">
+            <h2>🎫 쿠폰 사용 현황</h2>
+            <button onclick="refreshData()" class="btn btn-small">새로고침</button>
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>쿠폰명</th>
+                    <th>사용/전체</th>
+                    <th>남은 횟수</th>
+                </tr>
+                </thead>
+                <tbody id="couponsTable">
+                <tr th:each="coupon : ${coupons}">
+                    <td th:text="${coupon.id}"></td>
+                    <td th:text="${coupon.name}"></td>
+                    <td th:text="${coupon.usedCount + '/' + coupon.totalAvailableCount}"></td>
+                    <td th:text="${coupon.remainingCount}" class="coupon-count"></td>
+                </tr>
+                </tbody>
+            </table>
+                </div>
+            </section>
+
+            <!-- 주문 내역 -->
+    <section class="orders-section">
+        <h2>📋 주문 내역</h2>
+        <button onclick="refreshData()" class="btn btn-small">새로고침</button>
+        <div id="ordersContainer">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>주문 ID</th>
+                    <th>사용자 ID</th>
+                    <th>상태</th>
+                    <th>총액</th>
+                    <th>할인</th>
+                    <th>포인트 사용</th>
+                    <th>최종 금액</th>
+                    <th>주문 시간</th>
+                    <th>액션</th>
+                </tr>
+                </thead>
+                <tbody id="ordersTable">
+                <tr th:each="order : ${orders}">
+                    <td th:text="${order.id}"></td>
+                    <td th:text="${order.user.id}"></td>
+                    <td th:text="${order.status}" th:classappend="${order.status == T(com.concurrency.shop.domain.order.OrderStatus).CONFIRMED} ? 'status-confirmed' : 'status-cancelled'"></td>
+                    <td th:text="${#numbers.formatInteger(order.totalAmount, 0, 'COMMA') + '원'}"></td>
+                    <td th:text="${#numbers.formatInteger(order.discountAmount, 0, 'COMMA') + '원'}"></td>
+                    <td th:text="${#numbers.formatInteger(order.pointUsed, 0, 'COMMA')}"></td>
+                    <td th:text="${#numbers.formatInteger(order.finalAmount, 0, 'COMMA') + '원'}"></td>
+                    <td th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                    <td>
+                        <button th:onclick="'cancelOrder(' + ${order.id} + ', \'v1\')'" class="btn btn-xs btn-danger">V1 취소</button>
+                        <button th:onclick="'cancelOrder(' + ${order.id} + ', \'v2\')'" class="btn btn-xs btn-success">V2 취소</button>
+                    </td>
+                </tr>
+                </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- 우측: 로그 영역 -->
+        <div class="right-panel">
+            <section class="log-section">
+                <h2>📊 실행 로그</h2>
+                <button onclick="clearLog()" class="btn btn-small">로그 지우기</button>
+                <div id="logContainer" class="log-container"></div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/dashboard.js}"></script>
+</body>
+</html>
