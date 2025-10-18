@@ -24,12 +24,12 @@ public class PointServiceV2 {
     private final UserRepository userRepository;
     private final PointHistoryRepository pointHistoryRepository;
 
-    @DistributedLock(key = "'user:point:' + #userId", waitTime = 5, leaseTime = 3)
     @Transactional
+    @DistributedLock(key = "'user:point:' + #userId", waitTime = 5, leaseTime = 3)
     public void usePoints(Long userId, Long points, Long orderId) {
         log.info("[V2] 포인트 사용 시작 (분산 락) - 사용자 ID: {}, 사용 포인트: {}", userId, points);
 
-        User user = userRepository.findById(userId)
+        var user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
 
         log.info("[V2] 분산 락 획득 완료 - 현재 포인트 잔액: {}", user.getPointBalance());
@@ -38,14 +38,14 @@ public class PointServiceV2 {
         user.usePoints(points);
 
         // 포인트 사용 이력 저장
-        PointHistory history = new PointHistory(user, PointType.USE, points, user.getPointBalance(), orderId);
+        var history = new PointHistory(user, PointType.USE, points, user.getPointBalance(), orderId);
         pointHistoryRepository.save(history);
 
         log.info("[V2] 포인트 사용 완료 - 남은 포인트: {}", user.getPointBalance());
     }
 
-    @DistributedLock(key = "'user:point:' + #userId", waitTime = 5, leaseTime = 3)
     @Transactional
+    @DistributedLock(key = "'user:point:' + #userId", waitTime = 5, leaseTime = 3)
     public void earnPoints(Long userId, Long points, Long orderId) {
         log.info("[V2] 포인트 적립 시작 (분산 락) - 사용자 ID: {}, 적립 포인트: {}", userId, points);
 
@@ -61,8 +61,8 @@ public class PointServiceV2 {
         log.info("[V2] 포인트 적립 완료 - 적립 후 포인트: {}", user.getPointBalance());
     }
 
-    @DistributedLock(key = "'user:point:' + #userId", waitTime = 5, leaseTime = 3)
     @Transactional
+    @DistributedLock(key = "'user:point:' + #userId", waitTime = 5, leaseTime = 3)
     public void refundPoints(Long userId, Long points, Long orderId) {
         log.info("[V2] 포인트 환불 시작 (분산 락) - 사용자 ID: {}, 환불 포인트: {}", userId, points);
 

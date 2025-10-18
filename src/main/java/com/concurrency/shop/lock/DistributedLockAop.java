@@ -8,6 +8,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.core.annotation.Order;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
@@ -20,6 +21,7 @@ import java.lang.reflect.Method;
 @Slf4j
 @Aspect
 @Component
+@Order(1)
 @RequiredArgsConstructor
 public class DistributedLockAop {
 
