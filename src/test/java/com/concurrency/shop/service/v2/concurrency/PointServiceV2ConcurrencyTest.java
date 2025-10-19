@@ -18,6 +18,22 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
+/** 언제 Mock을 쓰고, 언제 실제 객체를 쓸까?
+ *
+ * Mock 사용 (단위 테스트) :
+ *  목적 : Service 로직만 검증
+ *  장점 : 빠름, DB 불필요, 격리된 테스트
+ *  예시 : PointServiceV2Test - Repository 는 가짜, Service 로직만 테스트
+ *
+ * 실제 객체 (통합 테스트) :
+ *  목적 : 전체 흐름 검증 (Service + Repository + DB)
+ *  장점 : 실제 동작 보장, 동시성 문제 검증 가능
+ *  예시 : PointServiceV2ConcurrencyTest - 실제 DB에 동시 요청하여 락 테스트
+ *
+ * 민재님 전략 :
+ *  단위 테스트 : Mock으로 빠르게 로직 검증
+ *  통합 테스트 : 실제 객체로 전체 흐름 및 동시성 검증
+ */
 @DisplayName("포인트 서비스 V2 서비스 통합 테스트")
 class PointServiceV2ConcurrencyTest extends AbstractConcurrencyTest {
 

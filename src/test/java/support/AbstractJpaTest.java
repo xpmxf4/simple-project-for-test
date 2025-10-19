@@ -11,7 +11,7 @@ import org.springframework.test.context.ContextConfiguration;
 @DataJpaTest
 @Import(TestTransactionConfig.class)
 @ContextConfiguration(initializers = JpaBeanInitializer.class)
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) // H2 가 아닌 실제 MySQL 사용
 public abstract class AbstractJpaTest extends AbstractTest {
 
     @PersistenceContext
